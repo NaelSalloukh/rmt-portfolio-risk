@@ -8,7 +8,7 @@ When you estimate how 73 stocks move together from a year of data, most of what 
 
 - **Most of the matrix was noise.** Out of 73 eigenvalues, only 7 stood clear of the band that pure noise would produce. The largest one, the market itself, carried 36% of all the variance on its own.
 - **Cleaning made the portfolios far more stable.** With short positions allowed, the cleaned matrix traded less than half as much as the raw one each month (0.67 against 1.62), held about twice as many effective positions (6.8 against 3.5), and had the best return after trading costs of the matrix-based methods.
-- **But it didn't beat the industry standard on risk.** Ledoit-Wolf shrinkage gave the lowest volatility (14.6%, against 15.5% for RMT and 15.7% for the raw matrix), and a bootstrap test showed that gap was real.
+- **But it didn't beat the industry standard on risk.** Ledoit-Wolf shrinkage gave the lowest volatility (14.6%, against 15.5% for RMT and 15.7% for the raw matrix), and a bootstrap test showed that gap was real: Ledoit-Wolf came out ahead of RMT in 99.85% of 2,000 resamples.
 - **Cleaning mattered most when data was scarce.** With only six months of data, the raw matrix did worse than simply holding every stock equally, and cleaning cut volatility by almost four percentage points. With two years of data, it started throwing away real information.
 - **Constraints did the cleaning for us.** Once short positions were banned and each stock capped at 10%, all three methods ended up at about 14.5% volatility.
 
@@ -40,15 +40,17 @@ Suppose I had $N$ stocks that were completely unrelated, and I estimated their c
 
 $$\lambda_\pm = \left(1 \pm \sqrt{q}\right)^2$$
 
-For the full ten years, $q = 73/2513 = 0.029$, so noise eigenvalues lie between 0.69 and 1.37. For a single year, $q = 73/252 = 0.29$, and the range widens dramatically to between 0.21 and 2.37. That is the heart of the problem: with a year of data, noise alone can make some combinations of stocks look almost five times safer than they really are.
+For the full ten years, $q = 73/2513 = 0.029$, so noise eigenvalues lie between 0.69 and 1.37. For a single year, $q = 73/252 = 0.29$, and the range widens dramatically to between 0.21 and 2.37. That is the heart of the problem: with a year of data, noise alone can make some combinations of stocks look as if they had almost five times less variance than they really do, or about half the volatility.
 
 Any eigenvalue well above the upper edge reflects genuine structure, and anything inside the band can't be told apart from noise. In our data, only 7 of the 73 eigenvalues cleared the upper edge.
+
+One refinement comes from Laloux et al. (1999). The market eigenvalue alone takes 36% of the variance, so the remaining eigenvalues share only what is left. Scaling the noise band by $\sigma^2 = 1 - \lambda_1 / N \approx 0.64$ lowers the upper edge and keeps 12 factors instead of 7. I tested both versions in the backtest.
 
 Marchenko–Pastur assumes well-behaved returns, and stock returns have fat tails, so I also checked it directly. I shuffled each stock's returns in time, which keeps every stock's own distribution but destroys any correlation between them. The largest shuffled eigenvalue was 1.38, against a predicted edge of 1.37, so the theory held up.
 
 ### Cleaning the matrix
 
-To clean the matrix, I used eigenvalue clipping (Laloux et al., 1999). I kept the eigenvalues above the noise edge as they were, replaced all the others with their average so that the total variance stayed the same, and left the eigenvectors unchanged. I then rescaled the result so that every stock still has a correlation of 1 with itself.
+To clean the matrix, I used eigenvalue clipping (Laloux et al., 1999). I kept the eigenvalues above the noise edge as they were, replaced all the others with their average so that the total variance stayed the same, and left the eigenvectors unchanged. I then rescaled the result so that every stock still has a correlation of 1 with itself, and multiplied it back by each stock's own volatility to get a covariance matrix for the optimiser: $\tilde\Sigma = D \tilde C D$, where $D$ is the diagonal matrix of volatilities.
 
 ### Why noise breaks the optimiser
 
@@ -56,7 +58,7 @@ The minimum-variance portfolio has a closed form:
 
 $$w = \frac{\Sigma^{-1} \mathbf{1}}{\mathbf{1}^\top \Sigma^{-1} \mathbf{1}}, \qquad \Sigma^{-1} = \sum_k \frac{1}{\lambda_k} \, v_k v_k^\top$$
 
-The second expression shows exactly where things go wrong. The inverse weights each direction by $1/\lambda_k$, so the smallest eigenvalues dominate the portfolio, and those are precisely the ones noise makes too small. The optimiser loads up on them, and the risk it predicts is far too low. Theory says that with one year of data, noise alone should make the realised volatility about $1/(1-q) \approx 1.4$ times the prediction. On the real data the raw matrix's ratio was 1.83, so noise explains most of the gap, and the rest comes from markets changing from one year to the next.
+Here $\lambda_k$ and $v_k$ are the eigenvalues and eigenvectors of the covariance matrix $\Sigma$ rather than of $C$, but the idea is the same. The second expression shows exactly where things go wrong. The inverse weights each direction by $1/\lambda_k$, so the smallest eigenvalues dominate the portfolio, and those are precisely the ones noise makes too small. The optimiser loads up on them, and the risk it predicts is far too low. Theory says that with one year of data, noise alone should make the realised volatility about $1/(1-q) \approx 1.4$ times the prediction. On the real data the raw matrix's ratio was 1.83, so noise explains most of the gap, and the rest comes from markets changing from one year to the next.
 
 ### The benchmark: Ledoit-Wolf shrinkage
 
@@ -89,14 +91,18 @@ To check whether the differences were real or just luck, I used a block bootstra
 
 With short positions allowed:
 
-| Method | Realised volatility | Monthly turnover | Effective holdings | Return after costs |
-|---|---|---|---|---|
-| Raw | 15.7% | 1.62 | 3.5 | 7.1% |
-| RMT | 15.5% | 0.67 | 6.8 | 10.4% |
-| Ledoit-Wolf | **14.6%** | 0.99 | 7.0 | 8.6% |
-| Equal weights | 17.9% | 0.00 | 73.0 | 16.0% |
+| Method | Realised volatility | Monthly turnover | Effective holdings | Gross exposure | Return after costs |
+|---|---|---|---|---|---|
+| Raw | 15.7% | 1.62 | 3.5 | 3.82 | 7.1% |
+| RMT | 15.5% | 0.67 | 6.8 | 2.52 | 10.4% |
+| Ledoit-Wolf | **14.6%** | 0.99 | 7.0 | 2.83 | 8.6% |
+| Equal weights | 17.9% | 0.00 | 73.0 | 1.00 | 16.0% |
 
-All three minimum-variance portfolios were clearly less risky than equal weights, so using a covariance matrix was worth it. Among them, Ledoit-Wolf had the lowest risk, and RMT barely improved on the raw matrix. Where RMT stood out was in how it built the portfolio: the raw matrix ran on average about 240% long and 140% short, concentrated in the equivalent of three or four stocks, and cleaning cut that back sharply. Equal weights had the highest return, but this was a strong bull market, minimum variance deliberately avoids the riskier growth stocks that led it, and it doesn't aim for return in the first place.
+All three minimum-variance portfolios were clearly less risky than equal weights, so using a covariance matrix was worth it. Among them, Ledoit-Wolf had the lowest risk, and RMT barely improved on the raw matrix. Where RMT stood out was in how it built the portfolio: the raw matrix ran on average about 240% long and 140% short, concentrated in the equivalent of three or four stocks, and cleaning cut that back sharply.
+
+The bootstrap made the ranking on risk clear. Ledoit-Wolf had lower volatility than the raw matrix in all 2,000 resamples, and lower than RMT in 99.85% of them. RMT came out ahead of the raw matrix in only 66%, so its small improvement could easily have been luck.
+
+Equal weights had the highest return, but this was a strong bull market, minimum variance deliberately avoids the riskier growth stocks that led it, and it doesn't aim for return in the first place.
 
 How the results changed with the length of the estimation window:
 
@@ -106,14 +112,26 @@ How the results changed with the length of the estimation window:
 | RMT | 14.2% | 15.5% | 17.5% |
 | Ledoit-Wolf | **13.7%** | **14.6%** | **15.8%** |
 | Equal weights | 17.5% | 17.9% | 18.5% |
+| RMT, market-adjusted edge | 13.8% | 15.6% | 16.8% |
 
-This table shows the theory most clearly. With six months of data, $q = 0.58$ and the noise band is very wide, and the raw matrix did worse than holding every stock equally. That is the situation random matrix theory was designed for, and cleaning made a large difference. With two years, $q = 0.15$, the band is much narrower, and some of the eigenvalues inside it were real. Flattening them threw away useful hedges, and RMT ended up as the riskiest of the matrix-based methods.
+Each column is tested over a slightly different period, because a longer window has to wait longer for its first estimate: the six-month run starts testing in March 2017 and the two-year run in September 2018, so it misses the calm 2017 market. That is why even equal weights, which don't use the window at all, change from column to column. The fair comparison is within each column rather than across them.
+
+This table shows the theory most clearly. With six months of data, $q = 0.58$ and the noise band is very wide, and the raw matrix did worse than holding every stock equally. That is the situation random matrix theory was designed for, and cleaning made a large difference. With two years, $q = 0.15$, the band is much narrower, and some of the eigenvalues inside it were real. Flattening them threw away useful hedges, and RMT ended up as the riskiest of the matrix-based methods. The market-adjusted edge, which keeps more factors, helped at six months and two years but made no real difference at one year.
 
 ![Growth and rolling volatility over time](figures/backtest_over_time.png)
 
 RMT's weakest moment was the COVID crash. Going into 2020, the matrix had been estimated in a calm year, when only a few factors stood out and clipping had flattened everything else. When the crash suddenly changed how stocks moved together, that simplified picture was the most wrong.
 
-In the long-only portfolios the differences almost disappeared. Banning short positions stops the optimiser from making large bets on the directions where the matrix is most wrong, so the constraint itself does much of the cleaning, a result first shown by Jagannathan and Ma (2003).
+In the long-only portfolios, with at most 10% in any stock, the differences almost disappeared:
+
+| Method | Realised volatility, short positions allowed | Realised volatility, long-only | Monthly turnover, long-only |
+|---|---|---|---|
+| Raw | 15.7% | 14.4% | 0.30 |
+| RMT | 15.5% | 14.7% | 0.26 |
+| Ledoit-Wolf | 14.6% | 14.4% | 0.28 |
+| Equal weights | 17.9% | 17.9% | 0.00 |
+
+Every long-only portfolio was less risky than its unconstrained version. Banning short positions stops the optimiser from making large bets on the directions where the matrix is most wrong, so the constraint itself does much of the cleaning, a result first shown by Jagannathan and Ma (2003).
 
 ![Power BI dashboard, long-only view](figures/powerbi_dashboard_long_only.png)
 
@@ -173,6 +191,8 @@ python -m venv .venv
 pip install -r requirements.txt
 $env:PGPASSWORD = "<your postgres password>"
 ```
+
+These commands are for Windows PowerShell. On macOS or Linux, use `source .venv/bin/activate` and `export PGPASSWORD="<your postgres password>"` instead.
 
 Then build the database. These commands use `psql`, but the SQL files can equally be run from pgAdmin:
 
