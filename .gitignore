@@ -8,3 +8,4 @@ __pycache__/
 Untitled*.ipynb
 
 __pycache__/
+!powerbi/data/*.csv

@@ -1,0 +1,9 @@
+portfolio,method,realised vol,annual return,max drawdown,mean predicted vol,monthly turnover,effective holdings,largest weight,gross exposure,return after costs,realised / predicted
+short positions allowed,raw,0.157,0.0905,-0.2669,0.086,1.6183,3.4976,0.2305,3.8156,0.0711,1.8263
+short positions allowed,rmt,0.1553,0.112,-0.3275,0.0915,0.671,6.8038,0.2015,2.5233,0.1039,1.6975
+short positions allowed,ledoit-wolf,0.146,0.0981,-0.2823,0.0915,0.9896,7.0089,0.1487,2.8256,0.0862,1.5959
+short positions allowed,equal,0.179,0.1603,-0.3381,0.1625,0.0,73.0,0.0137,1.0,0.1603,1.1015
+long-only,raw,0.1445,0.1137,-0.3106,0.1114,0.2991,14.6485,0.0997,1.0,0.1101,1.2968
+long-only,rmt,0.1466,0.1094,-0.3121,0.1122,0.2553,14.6368,0.0992,1.0,0.1063,1.3071
+long-only,ledoit-wolf,0.1445,0.1104,-0.3124,0.1092,0.2818,16.4624,0.0974,1.0,0.107,1.3227
+long-only,equal,0.179,0.1603,-0.3381,0.1625,0.0,73.0,0.0137,1.0,0.1603,1.1015
