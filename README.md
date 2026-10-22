@@ -1,6 +1,6 @@
 # Cleaning noisy covariance matrices with random matrix theory
 
-When you estimate how 73 stocks move together from a year of data, most of what you get back is noise. That would be a minor problem if nobody used the result, but portfolio optimisers do, and they are extremely good at finding and exploiting that noise. In this project I used random matrix theory, a tool that began in nuclear physics, to separate the real structure in a stock correlation matrix from the noise, and then tested over nine years of out-of-sample data whether cleaning the matrix actually leads to better portfolios.
+When you estimate how 73 stocks move together from a year of data, most of what you get back is noise. That would be a small problem if nobody used the result, but portfolio optimisers do, and they are extremely good at finding and exploiting that noise. In this project I used random matrix theory, a tool that began in nuclear physics, to separate the real structure in a stock correlation matrix from the noise, and then tested over nine years of out-of-sample data whether cleaning the matrix actually leads to better portfolios.
 
 ![Power BI dashboard of the backtest results](figures/powerbi_dashboard.png)
 
