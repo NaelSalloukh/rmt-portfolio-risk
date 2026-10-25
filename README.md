@@ -86,7 +86,7 @@ Besides realised volatility, I tracked a few measures of how each portfolio was 
 - **Gross exposure**, $\sum_i |w_i|$: the total size of all positions, long and short.
 - **Return after costs**, charging 0.1% per unit of turnover.
 
-To check whether the differences were real or just luck, I used a block bootstrap: I rebuilt the nine years of returns 2,000 times from randomly chosen one-month blocks and counted how often each method came out ahead. I also reran the backtest with six-month and two-year windows, with the COVID crash removed, and with different trading costs.
+To check whether the differences were real or just luck, I used a block bootstrap, where I rebuilt the nine years of returns 2,000 times from randomly chosen one-month blocks and counted how often each method came out ahead. I also reran the backtest with six-month and two-year windows, with the COVID crash removed, and with different trading costs.
 
 ## Results
 
@@ -121,7 +121,7 @@ This table shows the theory most clearly. With six months of data, $q = 0.58$ an
 
 ![Growth and rolling volatility over time](figures/backtest_over_time.png)
 
-RMT's weakest moment was the COVID crash. Going into 2020, the matrix had been estimated in a calm year, when only a few factors stood out and clipping had flattened everything else. When the crash suddenly changed how stocks moved together, that simplified picture was the most wrong.
+RMT's weakest moment was the COVID crash. Going into 2020, the matrix was estimated in a calm year, when only a few factors stood out and clipping had flattened everything else. When the crash suddenly changed how stocks moved together, that simplified picture was the most wrong.
 
 In the long-only portfolios, with at most 10% in any stock, the differences almost disappeared:
 
@@ -140,11 +140,11 @@ Every long-only portfolio was less risky than its unconstrained version. Banning
 
 I started this project expecting RMT to beat the standard method, and it didn't, at least not on risk: it was slightly riskier than Ledoit-Wolf, by about 0.9 percentage points. But I think the more interesting result is why. RMT gave portfolios that were far more stable and cheaper to run, and it did so with a clear, principled rule for deciding what is noise. Its strength showed up exactly where the theory says it should, when data is scarce relative to the number of stocks, and its weakness showed up where the theory also predicts, when real but weak structure is hiding inside the noise band.
 
-The natural next step would be to combine the two ideas: shrink the noise eigenvalues towards each other rather than flattening them completely, or use the more recent rotationally invariant estimators that come out of the same random matrix theory.
+The next step would be to combine the two ideas, where we can either shrink the noise eigenvalues towards each other rather than flattening them completely, or use the more recent rotationally invariant estimators that also stem from the same random matrix theory.
 
 ## Limitations
 
-- **Survivorship bias.** I used today's S&P 100, so every company in the data survived the decade, which flatters the absolute returns. The comparison between methods is fairer, because every method faced the same stocks.
+- **Survivorship bias.** I used today's S&P 100, so every company in the data survived the decade, which flatters the absolute returns. The comparison between methods is fairer because every method faced the same stocks.
 - **Trading costs** only enter the return after costs. I didn't model market impact or the cost of borrowing stocks to short them.
 - **Weights were held fixed within each month**, so turnover slightly understates the trading a real portfolio would need.
 - **Ledoit-Wolf** here is scikit-learn's version, which shrinks towards a scaled identity matrix. Other targets, such as constant correlation, can work better for stocks.
@@ -184,7 +184,7 @@ rmt-portfolio-risk/
 
 ## How to run
 
-You'll need Python and a local PostgreSQL server. First, set up the environment:
+To do this, you'll need Python and a local PostgreSQL server. First, set up the environment:
 
 ```
 python -m venv .venv
